@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>🌍 Mission Terre - Quiz Gamifié</title>
+
+<style>
+
+body{
+font-family:'Segoe UI',sans-serif;
+background:#1e90ff;
+color:white;
+text-align:center;
+padding:20px;
+margin:0;
+}
+
+h1{
+margin-bottom:20px;
+}
+
+.game-ui{
+display:flex;
+justify-content:space-around;
+font-size:20px;
+margin-bottom:15px;
+}
+
+.xp-bar{
+width:100%;
+background:rgba(255,255,255,0.3);
+border-radius:20px;
+margin-bottom:20px;
+height:20px;
+}
+
+#xpProgress{
+height:100%;
+width:0%;
+background:linear-gradient(90deg,#00ffcc,#00ffaa);
+border-radius:20px;
+transition:0.4s;
+}
+
+.question-box{
+background:white;
+color:#333;
+padding:20px;
+border-radius:15px;
+box-shadow:0 10px 20px rgba(0,0,0,0.3);
+margin-bottom:20px;
+animation:fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn{
+from{opacity:0;transform:translateY(10px);}
+to{opacity:1;transform:translateY(0);}
+}
+
+.question-image{
+width:100%;
+max-width:400px;
+margin-top:15px;
+border-radius:10px;
+box-shadow:0 5px 10px rgba(0,0,0,0.3);
+}
+
+button{
+display:block;
+width:100%;
+margin:10px 0;
+padding:12px;
+border:none;
+border-radius:10px;
+cursor:pointer;
+font-size:16px;
+transition:0.3s;
+font-weight:bold;
+}
+
+button:hover{
+transform:scale(1.05);
+}
+
+.correct{background:#28a745;color:white;}
+.wrong{background:#dc3545;color:white;}
+
+.mot{
+background:white;
+color:#333;
+padding:20px;
+border-radius:15px;
+box-shadow:0 10px 20px rgba(0,0,0,0.3);
+margin-top:30px;
+}
+
+#motsMystere span{
+display:inline-block;
+width:35px;
+font-size:28px;
+font-weight:bold;
+margin:5px;
+}
+
+input{
+padding:10px;
+font-size:16px;
+border-radius:8px;
+border:1px solid #ccc;
+margin-top:10px;
+width:60%;
+}
+
+#validateWord,#restart{
+background:#ff9933;
+color:white;
+}
+
+.hidden{display:none;}
+
+</style>
+</head>
+
+<body>
+
+<h1>🌍 Mission Terre</h1>
+
+<div class="game-ui">
+<div>❤️ Vies : <span id="lives">5</span></div>
+<div>⭐ Score : <span id="score">0</span></div>
+</div>
+
+<div class="xp-bar">
+<div id="xpProgress"></div>
+</div>
+
+<div id="questionContainer"></div>
+
+<div id="endScreen" class="hidden">
+
+<h2 id="endTitle"></h2>
+<p id="finalScore"></p>
+
+<div id="motSection" class="mot hidden">
+
+<h3>🔎 Mot mystère</h3>
+
+<div id="motsMystere">
+<span>_</span><span>_</span><span>_</span><span>_</span>
+<span>_</span><span>_</span><span>_</span><span>_</span>
+</div>
+
+<input type="text" id="finalWord" placeholder="Tape le mot ici">
+
+<br>
+
+<button id="validateWord">Valider</button>
+
+<div id="wordResult"></div>
+
+</div>
+
+<button id="restart">Rejouer</button>
+
+</div>
+
+<script>
+
+const questions=[
+
+{q:"Quand la Terre s’est-elle formée ?",img:"https://upload.wikimedia.org/wikipedia/commons/9/97/The_Earth_seen_from_Apollo_17.jpg",a:[["1 million d’années",false],["4,6 milliards d’années",true],["10 000 ans",false]]},
+
+{q:"Où sont apparues les premières formes de vie ?",img:"https://upload.wikimedia.org/wikipedia/commons/3/30/Hydrothermal_vent.jpg",a:[["Dans l’eau",true],["Sur les continents",false],["Dans l’atmosphère",false]]},
+
+{q:"À quel groupe appartenaient les dinosaures ?",img:"https://upload.wikimedia.org/wikipedia/commons/6/6e/Tyrannosaurus_Rex_Holotype.jpg",a:[["Des reptiles disparus",true],["Des mammifères",false],["Des poissons",false]]},
+
+{q:"Quand les dinosaures ont-ils disparu ?",img:"https://upload.wikimedia.org/wikipedia/commons/7/74/Dinosaur_impact_event.jpg",a:[["10 000 ans",false],["65 millions d’années",true],["1 million d’années",false]]},
+
+{q:"Qu’est-ce qu’un fossile ?",img:"https://upload.wikimedia.org/wikipedia/commons/5/56/Fossil_ammonite.jpg",a:[["Trace ou reste d’être vivant ancien",true],["Roche volcanique",false],["Animal vivant",false]]},
+
+{q:"Quelle roche provient du refroidissement du magma ?",img:"https://upload.wikimedia.org/wikipedia/commons/7/74/BasaltUSGOV.jpg",a:[["Sédimentaire",false],["Magmatique",true],["Calcaire",false]]},
+
+{q:"Qu’est-ce qu’un volcan ?",img:"https://upload.wikimedia.org/wikipedia/commons/0/04/Mount_St_Helens.jpg",a:[["Ouverture magma",true],["Montagne de glace",false],["Lac profond",false]]},
+
+{q:"À quoi sert la photosynthèse ?",img:"https://upload.wikimedia.org/wikipedia/commons/8/8c/Photosynthesis_en.svg",a:[["Produire CO2",false],["Produire matière et oxygène",true],["Produire chaleur",false]]},
+
+{q:"Où se situent les plaques tectoniques ?",img:"https://upload.wikimedia.org/wikipedia/commons/e/e0/Plates_tect2_en.svg",a:[["Surface et profondeur",true],["Atmosphère",false],["Océans uniquement",false]]},
+
+{q:"Que provoque le mouvement des plaques ?",img:"https://upload.wikimedia.org/wikipedia/commons/6/6f/Earthquake_fault.jpg",a:[["Séismes et volcans",true],["Saisons",false],["Marées",false]]},
+
+{q:"Quel animal est un mammifère ?",img:"https://upload.wikimedia.org/wikipedia/commons/5/56/Dolphin.jpg",a:[["Dauphin",true],["Requin",false],["Crocodile",false]]},
+
+{q:"Que signifie une extinction ?",img:"https://upload.wikimedia.org/wikipedia/commons/6/6f/Dodo_Raphus_cucullatus.jpg",a:[["Disparition totale d’une espèce",true],["Migration",false],["Évolution rapide",false]]},
+
+{q:"Quel gaz a augmenté grâce à la photosynthèse ?",img:"https://upload.wikimedia.org/wikipedia/commons/1/1b/Oxygen_molecule.png",a:[["Dioxygène",true],["Méthane",false],["CO2",false]]},
+
+{q:"Les humains appartiennent à quel groupe ?",img:"https://upload.wikimedia.org/wikipedia/commons/9/99/Human_evolution.jpg",a:[["Mammifères",true],["Reptiles",false],["Amphibiens",false]]},
+
+{q:"Dans quel type de roche trouve-t-on des fossiles ?",img:"https://upload.wikimedia.org/wikipedia/commons/3/3b/Sedimentary_rocks.jpg",a:[["Sédimentaires",true],["Magmatiques",false],["Métamorphiques",false]]},
+
+{q:"Qu’est-ce que la tectonique des plaques ?",img:"https://upload.wikimedia.org/wikipedia/commons/7/74/Plate_tectonics_map.gif",a:[["Mouvement plaques",true],["Rotation Terre",false],["Climat",false]]},
+
+{q:"Quand apparaissent les premiers animaux visibles ?",img:"https://upload.wikimedia.org/wikipedia/commons/b/b2/Burgess_Shale_fossils.jpg",a:[["Ère cambrienne",true],["Ère quaternaire",false],["Aujourd’hui",false]]},
+
+{q:"Quelle est la planète sur laquelle nous vivons ?",img:"https://upload.wikimedia.org/wikipedia/commons/9/97/The_Earth_seen_from_Apollo_17.jpg",a:[["La Terre",true],["Mars",false],["Vénus",false]]},
+
+{q:"D’où provient le magma ?",img:"https://upload.wikimedia.org/wikipedia/commons/e/e7/Earth-crust-cutaway.png",a:[["Manteau terrestre",true],["Noyau",false],["Atmosphère",false]]},
+
+{q:"Que permet l’évolution des espèces ?",img:"https://upload.wikimedia.org/wikipedia/commons/2/2e/Darwins_finches.jpeg",a:[["Adaptation",true],["Disparition immédiate",false],["Changement planète",false]]}
+
+];
+
+let current=0;
+let score=0;
+let lives=5;
+let indexLettre=0;
+
+const mot="AQUARIUM";
+
+const container=document.getElementById("questionContainer");
+const xp=document.getElementById("xpProgress");
+const livesSpan=document.getElementById("lives");
+const scoreSpan=document.getElementById("score");
+
+const endScreen=document.getElementById("endScreen");
+const motSection=document.getElementById("motSection");
+
+const motsMystere=document.querySelectorAll("#motsMystere span");
+const wordResult=document.getElementById("wordResult");
+
+function loadQuestion(){
+
+if(current>=questions.length){
+victory();
+return;
+}
+
+container.innerHTML="";
+
+const q=questions[current];
+
+const box=document.createElement("div");
+
+box.className="question-box";
+
+box.innerHTML=`
+<h2>${current+1}. ${q.q}</h2>
+<img src="${q.img}" class="question-image">
+`;
+
+q.a.forEach(ans=>{
+
+const btn=document.createElement("button");
+
+btn.textContent=ans[0];
+
+btn.onclick=()=>answer(ans[1],btn);
+
+box.appendChild(btn);
+
+});
+
+container.appendChild(box);
+
+}
+
+function answer(correct,btn){
+
+if(correct){
+
+btn.classList.add("correct");
+
+score+=10;
+
+if(indexLettre<motsMystere.length){
+
+motsMystere[indexLettre].textContent=mot[indexLettre];
+
+indexLettre++;
+
+}
+
+}else{
+
+btn.classList.add("wrong");
+
+lives--;
+
+livesSpan.textContent=lives;
+
+if(lives<=0){
+
+gameOver();
+return;
+
+}
+
+}
+
+scoreSpan.textContent=score;
+
+current++;
+
+xp.style.width=(current/questions.length*100)+"%";
+
+setTimeout(loadQuestion,800);
+
+}
+
+function gameOver(){
+
+endScreen.classList.remove("hidden");
+
+document.getElementById("endTitle").textContent="💀 GAME OVER";
+
+document.getElementById("finalScore").textContent="Score : "+score;
+
+container.innerHTML="";
+
+}
+
+function victory(){
+
+endScreen.classList.remove("hidden");
+
+document.getElementById("endTitle").textContent="🏆 VICTOIRE !";
+
+document.getElementById("finalScore").textContent="Score final : "+score;
+
+motSection.classList.remove("hidden");
+
+container.innerHTML="";
+
+launchConfetti();
+
+}
+
+document.getElementById("validateWord").onclick=()=>{
+
+const input=document.getElementById("finalWord").value.toUpperCase();
+
+if(input===mot){
+
+wordResult.innerHTML="🎉 BRAVO ! Mot trouvé !";
+
+}else{
+
+wordResult.innerHTML="❌ Mauvais mot";
+
+}
+
+};
+
+function restartGame(){
+
+current=0;
+
+score=0;
+
+lives=5;
+
+indexLettre=0;
+
+livesSpan.textContent=lives;
+
+scoreSpan.textContent=score;
+
+xp.style.width="0%";
+
+wordResult.textContent="";
+
+motSection.classList.add("hidden");
+
+endScreen.classList.add("hidden");
+
+motsMystere.forEach(span=>span.textContent="_");
+
+loadQuestion();
+
+}
+
+document.getElementById("restart").onclick=restartGame;
+
+function launchConfetti(){
+
+for(let i=0;i<150;i++){
+
+const conf=document.createElement("div");
+
+conf.style.position="fixed";
+
+conf.style.width="8px";
+
+conf.style.height="8px";
+
+conf.style.backgroundColor="hsl("+Math.random()*360+",100%,50%)";
+
+conf.style.top="-10px";
+
+conf.style.left=Math.random()*100+"%";
+
+conf.style.borderRadius="50%";
+
+document.body.appendChild(conf);
+
+conf.animate(
+[{transform:"translateY(0)"},{transform:"translateY(100vh)"}],
+{duration:2000+Math.random()*2000}
+);
+
+setTimeout(()=>conf.remove(),4000);
+
+}
+
+}
+
+loadQuestion();
+
+</script>
+
+</body>
+</html>
